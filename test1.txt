@@ -1,9 +1,4 @@
-Adafruit MMA8451 test!
-MMA8451 found!
-Range = 8G
-0.02,0.10,Adafruit MMA8451 test!
-MMA8451 found!
-Range = 8G
+X,Y,Z
 -0.34,0.86,-0.28
 -0.39,0.90,-0.39
 -0.29,0.91,-0.26
@@ -580,4 +575,3 @@ Range = 8G
 -0.21,0.80,-0.05
 -0.66,1.05,-0.26
 -0.67,1.01,-0.14
-End of transmission
