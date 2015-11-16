@@ -56,7 +56,7 @@ void setup() {
     lcd.print("Error: MMA Malfunction");
     while (1);
   }
-  Serial.println("MMA8451 found!");
+
 
   // Set SD Card
   if (!SD.begin()) {
