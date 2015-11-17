@@ -29,15 +29,22 @@ bool rfshlight = 0;
 bool dbnclight = 0;
 
 // SD Variables
+#define SD_REFRESH 60000
+long sdTime = 0;
 File root;
 
 // User Interface Variables
 int menu = 0;
 
 // The Real Deal
+int bounce = 0;
+long bounceTime = 0;
+int thresh = 50;
+long frameTime;
 int totalSteps;
 int steps = 0;
 int activity = 0;
+bool dbncSteps = 0;
 
 void setup() {
   // Debugging
@@ -56,13 +63,14 @@ void setup() {
     lcd.print("Error: MMA Malfunction");
     while (1);
   }
+  mma.setRange(MMA8451_RANGE_4_G);
 
 
   // Set SD Card
   if (!SD.begin()) {
     Serial.println("Couldnt start SD");
     lcd.setCursor(0, 0);
-    lcd.print("Error: No SD");
+    lcd.print("Error: No Memory");
     while (1);
   }
 
@@ -71,11 +79,20 @@ void setup() {
 }
 
 void loop() {
+  // Jumbo
+  frameTime = millis();
+  
   // User Interface
   uint8_t buttons = lcd.readButtons();
   if (buttons && (millis()-backlight) > 100) {
-    if (buttons & BUTTON_LEFT) {
+    if (buttons & BUTTON_UP) {
 
+    }
+    else if (buttons & BUTTON_DOWN) {
+      
+    }
+    else if (buttons & BUTTON_LEFT) {
+      
     }
     else if (buttons & BUTTON_RIGHT) {
       
@@ -85,6 +102,16 @@ void loop() {
     }
     backlight = millis();
     dbnclight = 1;
+  }
+
+  // Step Detect
+  int A = getA();
+  if (A > thresh && dbncSteps == 0) {
+    steps += 2;
+    dbncSteps == 1;
+  }
+  else if (A < thresh && dbncSteps == 1) {
+    dbncSteps == 0;
   }
 
   // LCD Refresh
@@ -104,6 +131,35 @@ void loop() {
     lcd.clear();
     dbnclight = 0;
   }
+
+  // Time Dependent Functions
+  long frame = millis() - frameTime;
+  sdTime += frame;
+  if (A > 10) {
+    bounce += A*1000/float(frame);
+  }
+  if (steps % 10 == 0 && steps != 0) {
+    thresh = (thresh + 6*bounce+4)/2;
+    bounce = 0;
+  }
+  if (sdTime > SD_REFRESH) {
+    writeEvent(0);
+    writeEvent(1);
+  }
+}
+
+int getA() {
+  mma.read();
+  sensors_event_t event; 
+  mma.getEvent(&event);
+  int A = 100*event.acceleration.x*event.acceleration.x;
+  A += 100*event.acceleration.y*event.acceleration.y;
+  A += 100*event.acceleration.z*event.acceleration.z;
+  A -= 100;
+  if (A < 0) {
+    A = 0;
+  }
+  return A;
 }
 
 void readEvent() {
