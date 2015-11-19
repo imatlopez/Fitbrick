@@ -1,89 +1,118 @@
 function walkTuner(filename)
-
-% Global variables
-global RATE TSTEP RSTEP threshold steps lastStep frameStart thresholdReset ox oy oz sx sy sz op t oldParam stepsSinceReset %#ok<NUSED>
-
 % Load File
 fileID = fopen([filename '.txt'],'r');
 dataArray = textscan(fileID,  '%f%f%f%f%f%f%[^\n\r]', 'Delimiter', ',', 'HeaderLines' ,1, 'ReturnOnError', false);
 fclose(fileID);
 
+clear global;
+global millis RATE RSTEP TSTEP threshold steps lastStep frameStart thresholdReset ox oy oz sx sy sz op oldParam stepsSinceReset X Y Z
+
 % Organize File
 X = dataArray{:, 1};
 Y = dataArray{:, 2};
 Z = dataArray{:, 3};
-A = 100*dataArray{:, 4};
-T = 100*dataArray{:, 5};
-S = 2*dataArray{:, 6};
+A = dataArray{:, 4};
+T = dataArray{:, 5};
+S = dataArray{:, 6};
 clear fileID dataArray; close all
 
-% Define constants
+RATE = 100;
 TSTEP = 500;
 RSTEP = 4;
-RATE = 100;
-dt = RATE/1000;
-t = dt:dt:(dt*length(X)); t = t';
+BRATE = 300;
+WEIGHT = 30;
 
-% Define variables
-threshold = 0 + t*0;
-steps = 0 + t*0;
-oldParam = 0;
-param = t*0;
+millis = (RATE:RATE:RATE*length(A))';
 
-% Define parameters
-ox = 0; oy = 0; oz = 0; sx = 0; sy = 0; sz = 0;
-stepsSinceReset = 0;
+lastStep = 0;
+frameStart = 0;
+thresholdReset = 0;
+ox = X(1);
+oy = Y(1);
+oz = Z(1);
+sx = 0;
+sy = 0;
+sz = 0;
 op = [0 0 0 0];
+oldParam = 0;
+stepsSinceReset = 0;
 
-% void loop()
-for i = 1:length(t)
+threshold = 0 * millis;
+steps = 0 * millis;
+param = 0 * millis;
+
+for i = 1:length(millis)
     
-    % Obtain Value
-    param(i:end) = getParameter(100*X(i),100*Y(i),100*Z(i));
-    steps(i:end) = steps(i:end) + 2*isStep(param(i),i);
-    
-    % Adapt threshold
-    threshold(i:end) = (threshold(i)*(t(i)-dt) + param(i)/10)/t(i);
-    
+   if mod(i,BRATE) == 0
+       ox = X(i);
+       oy = Y(i);
+       oz = Z(i);
+   end
+   param(i:end) = getParameter(i);
+   steps(i:end) = steps(i) + 2*isStep(param(i), i);
+   
+   threshold(i:end) = ((WEIGHT-1)*threshold(i) + param(i))/WEIGHT;%1000*(threshold(i)*(millis(i)-RATE)/1000 + param(i)/10)/millis(i);
 end
 
 % Plot
 figure(1)
 a1=subplot(6,1,1:2);
-plot(t, X,'r'), box off, grid on, set(gca,'XTickLabel',{})
+plot(millis, X,'r'), box off, grid on, set(gca,'XTickLabel',{})
 ylabel('X')
 a2=subplot(6,1,3:4);
-plot(t, Y,'g'), box off, grid on, set(gca,'XTickLabel',{})
+plot(millis, Y,'g'), box off, grid on, set(gca,'XTickLabel',{})
 ylabel('Y')
 a3=subplot(6,1,5:6);
-plot(t, Z,'b'), box off, grid on
-ylabel('Z'); xlabel('Time, s')
-linkaxes([a1 a2 a3],'x')
+plot(millis, Z,'b'), box off, grid on
+ylabel('Z'); xlabel('Time, ms')
+linkaxes([a1 a2 a3],'x'), xlim([0 6e4]);
 
 figure(2);
 b1=subplot(3,1,1:2);
-plot(t,param,'k',t,threshold,'r',t,A,'k--',t,T,'r--'), box off, grid on, set(gca,'XTickLabel',{})
+plot(millis,param,'k',millis,threshold,'r',millis,A,'k--',millis,T,'r--'), box off, grid on, set(gca,'XTickLabel',{})
 ylabel('A^2')
 b2=subplot(3,1,3);
-plot(t,steps,'k',t,S,'k--'), box off, grid on
-ylabel('Steps'); xlabel('Time, s')
-linkaxes([b1 b2],'x')
+plot(millis,steps,'k',millis,S,'k--'), box off, grid on
+ylabel('Steps'); xlabel('Time, ms')
+linkaxes([b1 b2],'x'), xlim([0 6e4]);
 
-function param = getParameter(x,y,z)
-global op ox oy oz sx sy sz
+function bool = isStep(param,i)
+global millis RATE RSTEP TSTEP threshold steps lastStep frameStart thresholdReset ox oy oz sx sy sz op oldParam stepsSinceReset X Y Z %#ok<NUSED>
 
-% Cycle through moving averager
+if param <= threshold(i) && oldParam > threshold(i)
+   flag = 1;
+   if (millis(i) - lastStep < TSTEP)
+       sx = 0; sy = 0; sz = 0;
+       ox = X(i); oy = Y(i); oz = Z(i);
+       stepsSinceReset = 0;
+       threshold(i:end) = 0;
+       thresholdReset = millis(i);
+   else
+       stepsSinceReset = stepsSinceReset + 1;
+   end
+   lastStep = millis(i);
+else
+    flag = 0;
+end
+
+oldParam = param;
+if stepsSinceReset < RSTEP
+    bool = 0;
+elseif stepsSinceReset == RSTEP
+    bool = flag * stepsSinceReset;
+else
+    bool = flag;
+end
+
+function int = getParameter(i)
+global millis RATE RSTEP TSTEP threshold steps lastStep frameStart thresholdReset ox oy oz sx sy sz op oldParam stepsSinceReset X Y Z %#ok<NUSED>
+
 op(1) = op(2); op(2) = op(3); op(3) = op(4);
 
-% Update sum parameters
-sx = sx + (x - ox);
-sy = sy + (y - oy);
-sz = sz + (z - oz);
+sx = sx + X(i) - ox; sy = sy + Y(i) - oy; sz = sz + Z(i) - oz;
 
-% Update old values
-ox = x; oy = y; oz = z;
+ox = X(i); oy = Y(i); oz = Z(i);
 
-% Determine parameter
 op(4) = sy;
 if op(4) < sx
     op(4) = sx;
@@ -92,35 +121,5 @@ if op(4) < sz
     op(4) = sz;
 end
 
-% Return moving averager
-param = (op(1) + op(2) + op(3) + op(4))/4;
+int = (op(1) + op(2) + op(3) + op(4))/4;
 
-
-function isTrue = isStep(param, i)
-global RATE TSTEP RSTEP threshold steps lastStep frameStart thresholdReset ox oy oz sx sy sz op t oldParam stepsSinceReset %#ok<NUSED>
-% Detect step
-if oldParam > threshold(i) && param < threshold(i)
-    flag = 1;
-    % Verify integrity of step
-    if t(i) - lastStep < TSTEP
-        % Reset thresholding
-        sx = 0; sy = 0; sz = 0;
-        stepsSinceReset = 0;
-        thresholdReset = t(i);
-    else 
-        stepsSinceReset = stepsSinceReset + 1;
-    end
-    lastStep = t(i);
-else
-    flag = 0;
-end
-oldParam = param;
-
-% Determine if data is reliable to publish
-if stepsSinceReset < RSTEP
-    isTrue = 0;
-elseif stepsSinceReset == RSTEP
-    isTrue = stepsSinceReset*flag;
-else
-    isTrue = flag;
-end

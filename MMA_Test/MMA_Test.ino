@@ -4,22 +4,28 @@
 
 /* Define peripherals */
 Adafruit_MMA8451 mma = Adafruit_MMA8451();
+sensors_event_t event;
+int x, y, z;
 
 /* Define constants */
 #define TIMEOUT 60000
+#define BRATE 300
 #define RATE 100
 #define TSTEP 500
 #define RSTEP 4
+#define WEIGHT 10
 
 /* Define variables */
 int threshold = 0;
 int steps = 0;
+int param;
 
 /* Define timers */
-long lastStep, frameStart, thresholdReset;
+long lastStep, frameStart;
 
 /* Define parameter variables */
-int ox, oy, oz, sx, sy, sz, op[4];
+int frames = 0;
+int ox, oy, oz, sx, sy, sz;
 
 void setup(void) {
   Serial.begin(9600);
@@ -30,7 +36,7 @@ void setup(void) {
     while (1);
   }
 
-  /* Set parameters */
+  /* Set parameters and default */
   mma.setRange(MMA8451_RANGE_4_G);
 
   /* Initialize output as csv compliant */
@@ -38,29 +44,31 @@ void setup(void) {
 }
 
 void loop() {
-  frameStart = millis();
+  frames++; frameStart = millis();
   
   /* Read from the sensor */
-  mma.read();
-  sensors_event_t event;
-  mma.getEvent(&event);
+  mma.read(); mma.getEvent(&event);
+  x = 100*event.acceleration.x;
+  y = 100*event.acceleration.y;
+  z = 100*event.acceleration.z;
+
+  /* Set orientation baseline */
+  if (frames % BRATE == 1) {
+    ox = (ox + x)/2; oy = (oy + y)/2; oz = (oz + z)/2;
+  }
 
   /* Obtain my value */
-  int param = getParameter(100*event.acceleration.x, 100*event.acceleration.y, 100*event.acceleration.z);
+  int param = getParameter();
   steps += 2*isStep(param);
 
   /* Adapt threshold */
-  threshold *= (millis() - RATE);
-  threshold /= 1000;
-  threshold += param/10;
-  threshold /= millis();
-  threshold *= 1000;
+  threshold = ((WEIGHT - 1) * threshold + param) / WEIGHT;
 
   /* Output */
-  serialOut(event.acceleration.x, event.acceleration.y, event.acceleration.z, param);
+  serialOut(param);
   
   /* Timeout */
-  if (millis() > TIMEOUT) {
+  if (millis() > long(TIMEOUT)) {
     while (1);
   } 
   else {
@@ -69,18 +77,19 @@ void loop() {
 }
 
 int oldParam = 0; int stepsSinceReset;
-bool isStep(int param) {
-  bool flag;
+int isStep(int param) {
+  int flag;
 
   /* Detect step */
-  if (param < threshold && oldParam > threshold) {
+  if (param <= threshold && oldParam > threshold) {
     flag = 1;
     /* Verify Integrity of Step */
-    if (millis() - lastStep < TSTEP) {
+    if ((millis() - lastStep) < long(TSTEP)) {
       /* Reset thresholding */
       sx = 0; sy = 0; sz = 0;
+      ox = x; oy = y; oz = z;
       stepsSinceReset = 0;
-      thresholdReset = millis();
+      threshold = 0;
     }
     else {
       stepsSinceReset++;
@@ -91,20 +100,21 @@ bool isStep(int param) {
     flag = 0;
   }
   oldParam = param;
-
+  
   /* Determine if data is reliable to publish */
-  if (stepsSinceReset < RSTEP) {
+  if (stepsSinceReset < int(RSTEP)) {
     return 0;
   }
-  else if (stepsSinceReset == RSTEP) {
-    return RSTEP*flag;
+  else if (stepsSinceReset == int(RSTEP)) {
+    return int(RSTEP)*int(flag);
   }
   else {
     return flag;
   }
 }
 
-int getParameter(int x, int y, int z) {
+int op[] = {0, 0, 0, 0};
+int getParameter() {
   /* Cycle through moving averager */
   op[0] = op[1]; op[1] = op[2]; op[2] = op[3];
 
@@ -127,7 +137,7 @@ int getParameter(int x, int y, int z) {
   return (op[0] + op[1] + op[2] + op[3])/4;
 }
 
-void serialOut(float x, float y, float z, float a) {
+void serialOut(int a) {
   Serial.print(x); Serial.print(",");
   Serial.print(y); Serial.print(",");
   Serial.print(z); Serial.print(",");
