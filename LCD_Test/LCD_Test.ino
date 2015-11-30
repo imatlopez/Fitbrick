@@ -20,7 +20,8 @@ long globalSteps = 1247865;
 
 
 /* Define debounces */
-bool screenID = 0;
+int screenID = 0;
+int useract = 1;
 bool screenOn = 0;
 
 /* Define clocks */
@@ -58,6 +59,12 @@ void loop() {
     }
     else if (buttons & BUTTON_SELECT) {
       localSteps = 0;
+    }
+    else if (buttons & BUTTON_UP) {
+      screenID = 3;
+      while(screenID == 3) {
+      TrainerMode();
+      }
     }
   }
 
@@ -112,7 +119,7 @@ void screenInfo() {
   lcd.setCursor(0,1);
   String act; String global = String(globalSteps);
   for (int i = 0; i < activity; i++) {
-    act += F("#");
+    act += "#";
   }
   lcd.print(global);
   for (int i = 0; i < 16 - global.length() - act.length(); i++) {
@@ -132,4 +139,22 @@ void enableScreen(bool state) {
     lcd.clear();
     lcd.setBacklight(SOFF);
   }
+}
+
+void TrainerMode() {
+ uint8_t buttons = lcd.readButtons();
+ if (buttons & BUTTON_RIGHT) {
+   useract++;
+   if (useract>3) {
+     useract = 1;
+   }
+   delay(250);
+ }
+ lcd.setCursor(0,0);
+ lcd.print(F("Training Mode"));
+ lcd.print(F("  "));
+ lcd.print(useract);
+ if (buttons & BUTTON_DOWN) {
+   screenID = 1;
+ }
 }
