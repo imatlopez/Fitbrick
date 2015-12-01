@@ -24,14 +24,17 @@ int x, y, z;
 /* Define Constants */
 #define SDRATE 30000
 #define BRATE 300
+#define TRATE 500
+#define KRATE 20000
 #define RATE 100
 #define TSTEP 500
-#define RSTEP 4
+#define RSTEP 3
 #define WEIGHT 10
 #define SLEEP 10000
 #define SON 0x7
 #define SOFF 0x0
-#define BDEB 50
+#define BDEB 150
+#define BUZZ 2
 
 /* Define variables */
 int activity = 1;
@@ -39,14 +42,14 @@ int threshold;
 long hiddenSteps;
 long localSteps;
 long globalSteps;
+int userAct;
 
 /* Define debounces */
-int screenID;
-int useract = 1;
+bool screenID;
 bool screenOn;
 
 /* Define timer */
-long lastStep, screenTime, frameStart, saveData, buttonDebounce;
+long lastStep, screenTime, frameStart, saveData, buttonDebounce, lastBuzz, kickAss, lazyAss;
 
 
 void setup(void) {
@@ -65,7 +68,7 @@ void setup(void) {
 
   /* Initialize sensor */
   if (!mma.begin()) {
-    Serial.println(F("Error"));
+    Serial.println(F("Error: MMA Failed"));
     while (1);
   }
 
@@ -73,7 +76,7 @@ void setup(void) {
   mma.setRange(MMA8451_RANGE_4_G);
 
   /* Restore Values */
-  restore(); 
+  restore();
 }
 
 int frames = 0;
@@ -81,7 +84,7 @@ int sx, sy, sz, ox, oy, oz;
 void loop() {
   frames++; frameStart = millis();
 
- /* Accept user input */
+  /* Accept user input */
   uint8_t buttons = lcd.readButtons();
   if (buttons && millis() - buttonDebounce > BDEB) {
     enableScreen(1); buttonDebounce = millis();
@@ -89,18 +92,18 @@ void loop() {
       if (screenID == 0) {
         screenID = 1;
       }
-      else {
+      else if (screenID == 1) {
         screenID = 0;
       }
     }
     else if (buttons & BUTTON_SELECT) {
       localSteps = 0;
     }
-    else if (buttons & BUTTON_UP) {
-      screenID = 3;
-      while(screenID == 3) {
-      TrainerMode();
-      }
+    else if ((buttons & BUTTON_UP) && userAct < 3) {
+      userAct++;
+    }
+    else if ((buttons & BUTTON_DOWN) && userAct > 0) {
+      userAct--;
     }
   }
 
@@ -123,11 +126,17 @@ void loop() {
   }
   else if (spm >= 160 && activity != 3) {
     activity = 3;
+    if (millis() - lazyAss > KRATE) {
+      kickAss = millis();
+    }
     store(spm);
   }
   else if (spm >= 120 && spm < 160 && activity != 2) {
     activity = 2;
     store(spm);
+  }
+  if (activity == 3) {
+    lazyAss = millis();
   }
 
   /* Obtain my value */
@@ -143,13 +152,11 @@ void loop() {
       screenInfo();
     }
   }
-  else {
-    if (screenOn == 1) {
-      enableScreen(0);
-    }
+  else if (screenOn == 1) {
+    enableScreen(0);
   }
 
-   /* Store values */
+  /* Store values */
   if (millis() - saveData > SDRATE) {
     saveData = millis();
     store(spm);
@@ -157,6 +164,17 @@ void loop() {
 
   /* Adapt threshold */
   threshold = ((WEIGHT - 1) * threshold + param) / WEIGHT;
+
+  /* Trainer Mode */
+  if (userAct > activity) {
+    if (millis() - lastBuzz > TRATE) {
+      tone(BUZZ, 4100, RATE);
+      lastBuzz = millis();
+    }
+  }
+  else {
+    noTone(BUZZ);
+  }
 
   /* Timeout */
   long safety = RATE - (millis() - frameStart);
@@ -231,7 +249,11 @@ void screenInfo() {
 
   /* First line */
   lcd.setCursor(0, 0);
-  if (screenID == 1) {
+  if (userAct > 0) {
+    lcd.print(F(" Training Mode "));
+    lcd.print(String(userAct));
+  }
+  else if (screenID == 1) {
     String X = String(x);
     String Y = String(y);
     String Z = String(z);
@@ -251,11 +273,15 @@ void screenInfo() {
     lcd.print(F(" "));
   }
   else {
-    String local = String(localSteps);
+    String local = String(localSteps); String kickButt;
+    if (millis() - lazyAss < KRATE) {
+      kickButt = String( (millis() - kickAss) / 1000 );
+    }
     lcd.print(local);
-    for (int i = 1; i < 16 - local.length(); i++) {
+    for (int i = 0; i < 16 - local.length() - kickButt.length(); i++) {
       lcd.print(F(" "));
     }
+    lcd.print(kickButt);
   }
 
   /* Second Line */
@@ -284,6 +310,8 @@ void enableScreen(bool state) {
   }
 }
 
+
+
 void store(int s) {
   Serial.println("Chikin");
   /* Update */
@@ -300,7 +328,7 @@ void store(int s) {
   output += F(",");
   output += String(activity);
   output += F(",");
-  output += String(millis()/1000);
+  output += String(millis() / 1000);
   root.println(output);
   root.close();
 
@@ -344,26 +372,4 @@ void restore() {
     root.println("Steps,Delta,SPM,Activity,Secs");
     root.close();
   }
-}
-
-void TrainerMode() {
- uint8_t buttons = lcd.readButtons();
- if (buttons & BUTTON_RIGHT) {
-   useract++;
-   if (useract>3) {
-     useract = 1;
-   }
-   delay(250);
- }
- lcd.setCursor(0,0);
- lcd.print(F("Training Mode"));
- lcd.print(F("  "));
- lcd.print(useract);
- if(useract<activity){
-    tone(2,440,500);
-    noTone(2);
- }
- if (buttons & BUTTON_DOWN) {
-   screenID = 1;
- }
 }
