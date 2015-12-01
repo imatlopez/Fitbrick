@@ -31,6 +31,7 @@ int x, y, z;
 #define SLEEP 10000
 #define SON 0x7
 #define SOFF 0x0
+#define BDEB 50
 
 /* Define variables */
 int activity = 1;
@@ -40,10 +41,12 @@ long localSteps;
 long globalSteps;
 
 /* Define debounces */
-bool screenID, screenOn;
+int screenID;
+int useract = 1;
+bool screenOn;
 
 /* Define timer */
-long lastStep, screenTime, frameStart, saveData;
+long lastStep, screenTime, frameStart, saveData, buttonDebounce;
 
 
 void setup(void) {
@@ -78,10 +81,10 @@ int sx, sy, sz, ox, oy, oz;
 void loop() {
   frames++; frameStart = millis();
 
-  /* Accept user input */
+ /* Accept user input */
   uint8_t buttons = lcd.readButtons();
-  if (buttons) {
-    enableScreen(1);
+  if (buttons && millis() - buttonDebounce > BDEB) {
+    enableScreen(1); buttonDebounce = millis();
     if (buttons & BUTTON_LEFT || buttons & BUTTON_RIGHT) {
       if (screenID == 0) {
         screenID = 1;
@@ -92,6 +95,12 @@ void loop() {
     }
     else if (buttons & BUTTON_SELECT) {
       localSteps = 0;
+    }
+    else if (buttons & BUTTON_UP) {
+      screenID = 3;
+      while(screenID == 3) {
+      TrainerMode();
+      }
     }
   }
 
@@ -335,4 +344,27 @@ void restore() {
     root.println("Steps,Delta,SPM,Activity,Secs");
     root.close();
   }
+}
+
+void TrainerMode() {
+ uint8_t buttons = lcd.readButtons();
+ if (buttons & BUTTON_RIGHT) {
+   useract++;
+   if (useract>3) {
+     useract = 1;
+   }
+   delay(250);
+ }
+ lcd.setCursor(0,0);
+ lcd.print(F("Training Mode"));
+ lcd.print(F("  "));
+ lcd.print(useract);
+ if(useract<activity){
+    tone(2,440,500);
+    noTone(2);
+    delay(100);
+ }
+ if (buttons & BUTTON_DOWN) {
+   screenID = 1;
+ }
 }
