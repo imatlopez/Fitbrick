@@ -362,7 +362,6 @@ void TrainerMode() {
  if(useract<activity){
     tone(2,440,500);
     noTone(2);
-    delay(100);
  }
  if (buttons & BUTTON_DOWN) {
    screenID = 1;
