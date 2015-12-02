@@ -34,7 +34,7 @@ int x, y, z;
 #define SON 0x7
 #define SOFF 0x0
 #define BDEB 150
-#define BUZZ 2
+#define BUZZ 3
 
 /* Define variables */
 int activity = 1;
