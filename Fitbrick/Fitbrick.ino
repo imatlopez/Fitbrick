@@ -39,9 +39,9 @@ int x, y, z;
 /* Define variables */
 int activity = 1;
 int threshold;
-long hiddenSteps;
-long localSteps;
-long globalSteps;
+unsigned long hiddenSteps;
+unsigned long localSteps;
+unsigned long globalSteps;
 int userAct;
 
 /* Define debounces */
@@ -79,7 +79,7 @@ void setup(void) {
   restore();
 }
 
-int frames = 0;
+unsigned long frames;
 int sx, sy, sz, ox, oy, oz;
 void loop() {
   frames++; frameStart = millis();
