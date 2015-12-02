@@ -164,6 +164,9 @@ void loop() {
 
   /* Adapt threshold */
   threshold = ((WEIGHT - 1) * threshold + param) / WEIGHT;
+  if (threshold < 10) {
+    threshold = 10;
+  }
 
   /* Trainer Mode */
   if (userAct > activity) {
