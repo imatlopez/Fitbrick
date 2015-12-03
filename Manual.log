@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015) (preloaded format=pdflatex 2015.5.24)  3 DEC 2015 11:43
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015) (preloaded format=pdflatex 2015.5.24)  3 DEC 2015 16:06
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -744,20 +744,14 @@ File: siunitx-abbreviations.cfg 2015/01/21 v2.6e siunitx: Abbreviated units
 \c@lstlisting=\count216
 \c__siunitx_mathsf_int=\count217
 \c__siunitx_mathtt_int=\count218
- <ningrui.png, id=1, 602.25pt x 451.6875pt>
-File: ningrui.png Graphic file (type png)
- <use ningrui.png>
-Package pdftex.def Info: ningrui.png used on input line 47.
-(pdftex.def)             Requested size: 397.48499pt x 298.12845pt.
  (./Manual.toc)
 \tf@toc=\write3
 \openout3 = `Manual.toc'.
 
+ [1
 
-[1
-
-{/usr/local/texlive/2015/texmf-var/fonts/map/pdftex/updmap/pdftex.map} <./ningr
-ui.png>] <sketch_bb.pdf, id=14, 431.6125pt x 396.48125pt>
+{/usr/local/texlive/2015/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] <sketch
+_bb.pdf, id=13, 431.6125pt x 396.48125pt>
 File: sketch_bb.pdf Graphic file (type pdf)
 
 <use sketch_bb.pdf>
@@ -767,7 +761,7 @@ Package pdftex.def Info: sketch_bb.pdf used on input line 62.
 Overfull \vbox (76.37518pt too high) detected at line 62
  []
 
-<screen.pdf, id=15, 1284.8pt x 240.9pt>
+<screen.pdf, id=14, 1284.8pt x 240.9pt>
 File: screen.pdf Graphic file (type pdf)
  <use screen.pdf>
 Package pdftex.def Info: screen.pdf used on input line 82.
@@ -776,10 +770,10 @@ Package pdftex.def Info: screen.pdf used on input line 82.
 No file Manual.bbl.
 [2 <./sketch_bb.pdf> <./screen.pdf>] (./Manual.aux) ) 
 Here is how much of TeX's memory you used:
- 14469 strings out of 493089
- 297386 string characters out of 6134842
+ 14464 strings out of 493089
+ 297312 string characters out of 6134842
  330803 words of memory out of 5000000
- 17816 multiletter control sequences out of 15000+600000
+ 17812 multiletter control sequences out of 15000+600000
  13209 words of font info for 49 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  42i,12n,43p,10434b,378s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -792,10 +786,10 @@ xmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2015/texm
 f-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2015/texmf-
 dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2015/texmf-di
 st/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on Manual.pdf (2 pages, 2221659 bytes).
+Output written on Manual.pdf (2 pages, 1396556 bytes).
 PDF statistics:
- 369 PDF objects out of 1000 (max. 8388607)
+ 368 PDF objects out of 1000 (max. 8388607)
  197 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
- 16 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 11 words of extra memory for PDF output out of 10000 (max. 10000000)
 
